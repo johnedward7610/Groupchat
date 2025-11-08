@@ -1,0 +1,94 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Groupchat Lobby</title>
+  <style>
+    body { font-family: system-ui, Arial; max-width:800px; margin:20px auto; padding:10px; }
+    .room { border:1px solid #ddd; padding:10px; margin:8px 0; display:flex; justify-content:space-between; }
+    input, button, textarea { font-size:14px; padding:8px; }
+  </style>
+</head>
+<body>
+  <h1>Groupchat Lobby</h1>
+
+  <div id="usernameRow">
+    <input id="username" placeholder="Enter display name" />
+    <button id="saveName">Save</button>
+    <small> (saved locally)</small>
+  </div>
+
+  <hr>
+
+  <h3>Create a Room</h3>
+  <input id="roomName" placeholder="Room name" />
+  <label><input type="checkbox" id="isPublic" checked /> Public</label>
+  <button id="createRoom">Create</button>
+
+  <h3>Public Rooms</h3>
+  <div id="roomsList">Loading...</div>
+
+  <button id="joinRandom">Join Random Public Room</button>
+
+  <script>
+    const usernameInput = document.getElementById('username');
+    const saveNameBtn = document.getElementById('saveName');
+    const createBtn = document.getElementById('createRoom');
+    const roomsList = document.getElementById('roomsList');
+    const joinRandom = document.getElementById('joinRandom');
+
+    // Load saved name
+    usernameInput.value = localStorage.getItem('gc_username') || '';
+
+    saveNameBtn.onclick = () => {
+      const v = usernameInput.value.trim();
+      if (!v) return alert('Enter a name');
+      localStorage.setItem('gc_username', v);
+      alert('Name saved');
+    };
+
+    async function fetchRooms() {
+      const res = await fetch('/api/rooms/public');
+      const data = await res.json();
+      if (data.length === 0) {
+        roomsList.innerHTML = '<i>No public rooms yet.</i>';
+        return;
+      }
+      roomsList.innerHTML = '';
+      data.forEach(r => {
+        const el = document.createElement('div');
+        el.className = 'room';
+        el.innerHTML = `<div><strong>${r.name}</strong><div style="font-size:12px">Users: ${r.usersCount}</div></div>
+          <div><a href="/room.html?id=${r.id}"><button>Join</button></a></div>`;
+        roomsList.appendChild(el);
+      });
+    }
+
+    // Create room
+    createBtn.onclick = async () => {
+      const name = document.getElementById('roomName').value.trim() || 'Untitled room';
+      const isPublic = document.getElementById('isPublic').checked;
+      const res = await fetch('/api/rooms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, isPublic })
+      });
+      const room = await res.json();
+      // redirect to room page
+      window.location.href = `/room.html?id=${room.id}`;
+    };
+
+    // Join random
+    joinRandom.onclick = async () => {
+      const res = await fetch('/api/rooms/random');
+      if (!res.ok) return alert('No public rooms available');
+      const room = await res.json();
+      window.location.href = `/room.html?id=${room.id}`;
+    };
+
+    fetchRooms();
+    // refresh public rooms every 8s
+    setInterval(fetchRooms, 8000);
+  </script>
+</body>
+</html>

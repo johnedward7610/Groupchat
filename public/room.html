@@ -1,0 +1,98 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Room</title>
+  <style>
+    body { font-family: system-ui, Arial; max-width:900px; margin:20px auto; padding:10px; }
+    #chat { border:1px solid #ddd; height:400px; overflow:auto; padding:10px; background:#fafafa; }
+    .msg { padding:6px; margin:6px 0; border-radius:6px; }
+    .meta { font-size:12px; color:#666; }
+    #controls { margin-top:10px; display:flex; gap:6px; align-items:flex-start; }
+    textarea { flex:1; height:64px; }
+  </style>
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+  <a href="/">← Lobby</a>
+  <h2 id="roomName">Room</h2>
+  <div id="roomMeta"></div>
+  <div id="chat"></div>
+
+  <div id="controls">
+    <textarea id="messageInput" placeholder="Write a message..."></textarea>
+    <div>
+      <button id="sendBtn">Send</button><br>
+      <button id="leaveBtn">Leave</button>
+    </div>
+  </div>
+
+  <script>
+    const socket = io();
+
+    // get username from localStorage
+    const username = localStorage.getItem('gc_username') || '';
+    if (!username) {
+      const ask = prompt('Enter display name (this will be saved locally):');
+      if (ask) localStorage.setItem('gc_username', ask);
+    }
+
+    // parse room id from query
+    const params = new URLSearchParams(window.location.search);
+    const roomId = params.get('id');
+    if (!roomId) {
+      alert('No room id provided');
+      window.location.href = '/';
+    }
+
+    const chat = document.getElementById('chat');
+    const roomNameEl = document.getElementById('roomName');
+    const roomMeta = document.getElementById('roomMeta');
+
+    function addMessage({ username: u, text, ts, system }) {
+      const el = document.createElement('div');
+      el.className = 'msg';
+      const time = new Date(ts || Date.now()).toLocaleTimeString();
+      if (system) {
+        el.innerHTML = `<div class="meta">[${time}] <em>${text}</em></div>`;
+        el.style.opacity = '0.9';
+      } else {
+        el.innerHTML = `<div class="meta">[${time}] <strong>${u}</strong></div><div>${escapeHtml(text)}</div>`;
+      }
+      chat.appendChild(el);
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    function escapeHtml(s){ return s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
+
+    // join the room
+    socket.emit('join-room', { roomId, username: localStorage.getItem('gc_username') || username });
+
+    // server events
+    socket.on('system-message', data => {
+      addMessage({ text: data.text, ts: Date.now(), system: true });
+    });
+
+    socket.on('room-meta', meta => {
+      roomNameEl.textContent = meta.name || 'Room';
+      roomMeta.textContent = `Users: ${meta.usersCount} • ${(meta.public ? 'Public' : 'Private')}`;
+    });
+
+    socket.on('chat-message', msg => {
+      addMessage(msg);
+    });
+
+    // send message
+    document.getElementById('sendBtn').onclick = () => {
+      const text = document.getElementById('messageInput').value.trim();
+      if (!text) return;
+      socket.emit('chat-message', { text });
+      document.getElementById('messageInput').value = '';
+    };
+
+    document.getElementById('leaveBtn').onclick = () => {
+      window.location.href = '/';
+    };
+  </script>
+</body>
+</html>
