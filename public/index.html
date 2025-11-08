@@ -4,13 +4,63 @@
   <meta charset="utf-8" />
   <title>Groupchat Lobby</title>
   <style>
-    body { font-family: system-ui, Arial; max-width:800px; margin:20px auto; padding:10px; }
-    .room { border:1px solid #ddd; padding:10px; margin:8px 0; display:flex; justify-content:space-between; }
-    input, button, textarea { font-size:14px; padding:8px; }
+    body { font-family: system-ui, Arial;
+    max-width:800px; 
+    margin:20px auto; 
+    padding:10px; 
+      background-image: linear-gradient(to bottom, #FFB7F9,#FF60F3) ;
+      background-attachment: fixed;
+    }
+    
+    .room { border:1px solid #C4C9FF; padding:10px;
+    margin:8px 0; 
+    display:flex;
+    justify-content:space-between;
+    }
+    input, textarea { font-size:14px; padding:8px;
+    background: #fff;
+    border: none;
+    border-radius: 10px;
+    transition: 1s;
+    }
+    button {
+      background: #FFB7F9;
+      border: none;
+      border-radius: 10px;
+      margin: 10px;
+      padding: 10px;
+    }
+    .head,{
+      background: #FFFFFF;
+      padding 20px;
+      max-width: 300px;
+      box-shadow: 0px 10px 10px 0px #0000003D;
+      border-radius: 10px;
+    }
+    #usernameRow{
+      background: #9C88DB;
+      border-radius: 10px;
+      padding:20px;
+      box-shadow: 0px 10px 10px 0px #0000004A;
+    }
+    .making {
+      margin-top: 20px;
+      background: #9C88DB;
+      border-radius: 10px;
+      padding:20px;
+      box-shadow: 0px 10px 10px 0px #0000004A;
+    }
+    input:hover {
+      transform: scale(1.1);
+    }
+    
+    
   </style>
 </head>
 <body>
-  <h1>Groupchat Lobby</h1>
+  <div class="head">
+    <h1>GROUP LOBBY</h1>
+  </div>
 
   <div id="usernameRow">
     <input id="username" placeholder="Enter display name" />
@@ -18,12 +68,13 @@
     <small> (saved locally)</small>
   </div>
 
-  <hr>
 
-  <h3>Create a Room</h3>
-  <input id="roomName" placeholder="Room name" />
-  <label><input type="checkbox" id="isPublic" checked /> Public</label>
-  <button id="createRoom">Create</button>
+  <div class="making">
+    <h3>Create a Room</h3>
+<input id="roomName" placeholder="Room name" />
+<label><input type="checkbox" id="isPublic" checked /> Public</label>
+<button id="createRoom">Create</button>
+  </div>
 
   <h3>Public Rooms</h3>
   <div id="roomsList">Loading...</div>
@@ -89,6 +140,55 @@
     fetchRooms();
     // refresh public rooms every 8s
     setInterval(fetchRooms, 8000);
+  </script>
+</body>
+</html>    const roomNameEl = document.getElementById('roomName');
+    const roomMeta = document.getElementById('roomMeta');
+
+    function addMessage({ username: u, text, ts, system }) {
+      const el = document.createElement('div');
+      el.className = 'msg';
+      const time = new Date(ts || Date.now()).toLocaleTimeString();
+      if (system) {
+        el.innerHTML = `<div class="meta">[${time}] <em>${text}</em></div>`;
+        el.style.opacity = '0.9';
+      } else {
+        el.innerHTML = `<div class="meta">[${time}] <strong>${u}</strong></div><div>${escapeHtml(text)}</div>`;
+      }
+      chat.appendChild(el);
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    function escapeHtml(s){ return s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
+
+    // join the room
+    socket.emit('join-room', { roomId, username: localStorage.getItem('gc_username') || username });
+
+    // server events
+    socket.on('system-message', data => {
+      addMessage({ text: data.text, ts: Date.now(), system: true });
+    });
+
+    socket.on('room-meta', meta => {
+      roomNameEl.textContent = meta.name || 'Room';
+      roomMeta.textContent = `Users: ${meta.usersCount} • ${(meta.public ? 'Public' : 'Private')}`;
+    });
+
+    socket.on('chat-message', msg => {
+      addMessage(msg);
+    });
+
+    // send message
+    document.getElementById('sendBtn').onclick = () => {
+      const text = document.getElementById('messageInput').value.trim();
+      if (!text) return;
+      socket.emit('chat-message', { text });
+      document.getElementById('messageInput').value = '';
+    };
+
+    document.getElementById('leaveBtn').onclick = () => {
+      window.location.href = '/';
+    };
   </script>
 </body>
 </html>
