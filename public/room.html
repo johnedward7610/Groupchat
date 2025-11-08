@@ -5,25 +5,52 @@
   <title>Room</title>
   <style>
     body { font-family: system-ui, Arial; max-width:900px; margin:20px auto; padding:10px; }
-    #chat { border:1px solid #ddd; height:400px; overflow:auto; padding:10px; background:#fafafa; }
-    .msg { padding:6px; margin:6px 0; border-radius:6px; }
+    #chat { 
+      border:1px solid #ddd; 
+      height:400px;
+      overflow:auto; 
+      padding:10px; background:#fafafa; 
+      border-radius: 10px;
+    }
+    .msg {
+    padding:6px; 
+    margin:6px 0; 
+    border-radius:6px; 
+      background: #7682FFB3;
+    }
     .meta { font-size:12px; color:#666; }
     #controls { margin-top:10px; display:flex; gap:6px; align-items:flex-start; }
-    textarea { flex:1; height:64px; }
+    textarea { flex:1;
+    height:50px;
+      border-radius: 20px;
+      border: none;
+      box-shadow: 0px 10px 10px 0px #00000036;
+    }
+    button {
+      background: #9EA6FF;
+      border-radius: 10px;
+      padding: 20px;
+      border: none;
+      transition: 1s;
+    }
+    button:hover {
+      box-shadow: 0px 10px 10px 0px #00000036;
+    }
   </style>
   <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
-  <a href="/">← Lobby</a>
+  <button id="leaveBtn">Leave</button>
   <h2 id="roomName">Room</h2>
   <div id="roomMeta"></div>
   <div id="chat"></div>
+ 
 
   <div id="controls">
     <textarea id="messageInput" placeholder="Write a message..."></textarea>
     <div>
       <button id="sendBtn">Send</button><br>
-      <button id="leaveBtn">Leave</button>
+      
     </div>
   </div>
 
@@ -95,4 +122,4 @@
     };
   </script>
 </body>
-</html>
+  </html>
